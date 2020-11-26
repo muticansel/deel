@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { sequelize } = require('./model')
 const { getProfile } = require('./middleware/getProfile')
-const { Op } = require("sequelize");
+const { Op, col, fn, literal } = require("sequelize");
 const app = express();
 app.use(bodyParser.json());
 app.set('sequelize', sequelize)
@@ -19,9 +19,9 @@ app.get('/contracts/:id', getProfile, async (req, res) => {
     const { id } = req.params
     const contract = await Contract.findOne({ where: { id } })
 
-    if(contract.ContractorId !== profile_id || contract.ClientId !== profile_id)
+    if (contract.ContractorId !== profile_id || contract.ClientId !== profile_id)
         return res.status(404).end()
-    if (!contract) 
+    if (!contract)
         return res.status(404).end()
     res.json(contract)
 })
@@ -80,13 +80,13 @@ app.post('/jobs/:job_id/pay', async (req, res) => {
     })
 
     try {
-        if(theJobWillBePaid[0].Contract.Client.balance > theJobWillBePaid[0].price){
+        if (theJobWillBePaid[0].Contract.Client.balance > theJobWillBePaid[0].price) {
             //C lient balance decrement
             await Profile.increment(
                 { balance: -theJobWillBePaid[0].price },
                 { where: { id: theJobWillBePaid[0].Contract.ClientId } }
             )
-    
+
             // Contractor balance increment
             await Profile.increment(
                 { balance: +theJobWillBePaid[0].price },
@@ -123,7 +123,7 @@ app.post('/balances/deposit/:userId', async (req, res) => {
     })
 
     try {
-        if(deposit > (totalAmount[0].total * 0.25)){
+        if (deposit > (totalAmount[0].total * 0.25)) {
             res.status(401).send("can't deposit more than 25% the total of jobs to pay")
         } else {
             Profile.increment(
@@ -135,6 +135,70 @@ app.post('/balances/deposit/:userId', async (req, res) => {
     } catch (err) {
         console.log(err)
     }
+})
+
+// Task 6
+app.get('/admin/best-profession', async (req, res) => {
+    const { Job, Contract, Profile } = req.app.get('models');
+    var { start, end } = req.query
+
+    const professions = await Job.findAll({
+        where: {
+            paid: true,
+            paymentDate: {
+                [Op.between]: [new Date(start), new Date(end)]
+            }
+        },
+        include: [
+            {
+                model: Contract,
+                include: [
+                    { model: Profile, as: 'Contractor', attributes: [] }
+                ],
+                attributes: []
+            }
+        ],
+        attributes: [
+            [fn('sum', col('price')), 'total'],
+            [col('Contract.Contractor.profession'), 'profession']
+        ],
+        group: [col('Contract.Contractor.profession')],
+        order: [[literal('total'), 'DESC']]
+    })
+
+    return res.json(professions[0])
+})
+
+// Task 7
+app.get('/admin/best-clients', async (req, res) => {
+    const { Job, Contract, Profile } = req.app.get('models');
+    var { start, end, limit } = req.query
+
+    const jobs = await Job.findAll({
+        where: {
+            paid: true,
+            paymentDate: {
+                [Op.between]: [new Date(start), new Date(end)]
+            }
+        },
+        include: [
+            {
+                model: Contract,
+                include: [
+                    { model: Profile, as: 'Client', attributes: [] }
+                ],
+                attributes: []
+            }
+        ],
+        order: [
+            ['price', 'DESC']
+        ],
+        attributes: [
+            [col('Job.id'), "id"], [col('Contract.Client.firstName'), 'firstName'], [col('Contract.Client.lastName'), 'lastName'], 'price'
+        ],
+        limit: limit ? limit : 2
+    })
+    return res.json(jobs)
 })
 
 module.exports = app;
