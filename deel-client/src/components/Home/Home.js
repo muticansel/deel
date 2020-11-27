@@ -7,9 +7,9 @@ function App() {
             <Button as={Link} to="/contracts">
                 Get CONTRACTS
             </Button>
-            <Button as={Link} to="/contracts">
+            {/* <Button as={Link} to="/contracts">
                 Best Profession
-            </Button>
+            </Button> */}
         </>
     );
 }
