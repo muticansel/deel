@@ -58,14 +58,24 @@ app.get('/contracts', async (req, res) => {
  * @returns all unpaid jobs for a user, for active contracts only.
  */
 app.get('/jobs/unpaid', async (req, res) => {
-    const { Job } = req.app.get('models');
+    const { Job, Contract } = req.app.get('models');
 
     const unpaidJobs = await Job.findAll({
         where: {
             paid: {
                 [Op.not]: true
             }
-        }
+        },
+        include: [
+            {
+                model: Contract,
+                where: {
+                    status: {
+                        [Op.not]: 'terminated'
+                    }
+                }
+            }
+        ]
     })
     return res.json(unpaidJobs)
 })
