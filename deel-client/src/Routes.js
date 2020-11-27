@@ -4,7 +4,7 @@ import { Router, Switch, Route } from "react-router-dom";
 
 import Home from './components/Home/Home'
 import Contracts from "./components/Contracts/Contracts";
-import ContractDetail from "./components/Contracts/Contract";
+import UnpaidJobs from "./components/Jobs/UnpaidJobs";
 import history from './history';
 
 export default class Routes extends Component {
@@ -14,7 +14,7 @@ export default class Routes extends Component {
                 <Switch>
                     <Route path="/" exact component={Home} />
                     <Route path="/contracts" component={Contracts} />
-                    <Route path="/contracts/:id" component={ContractDetail} />
+                    <Route path="/jobs/unpaid" component={UnpaidJobs} />
                 </Switch>
             </Router>
         )
